@@ -3,32 +3,34 @@
 #include "WeightedGraph.h"
 using namespace std;
 
+const string fileName = "graph.txt";
+
 int main()
 {
 	// create graph from file 
-		WeightedGraph wg;
-		ifstream ifile("graph.txt");
-		wg.loadGraphFromFile(ifile);
-		ifile.close();
+	WeightedGraph graph;
+	fstream ifile(fileName, std::ios::in);
+	graph.loadGraphFromFile(ifile);
+	ifile.close();
 	// create array of vertcies labels
-		char* p;
-		p = new char[wg.getNVertices()];
+	char* p;
+	p = new char[graph.getNVertices()];
 	// create array of Nodes of graph 
-		Node* n;
-		n = new Node[wg.getNVertices()];
+	Node* n;
+	n = new Node[graph.getNVertices()];
 	// find the shortest path using dijkstra algorithm
-		wg.dijkstra('g',p,n);
-		cout<<endl<<"Node\tCost\tPrevious"; // print path syntax
+	graph.dijkstra('g', p, n);
+	cout << endl << "Node\tCost\tPrevious"; // print path syntax
 	// print shortest path
-		for(int i=0;i<wg.getNVertices();i++)
-		{
-			cout<<endl<<n[i].label<<"\t"<<n[i].cost<<"\t"<<p[i];
-		}
-		return 0;
+	for (int i = 0; i < graph.getNVertices(); i++)
+	{
+		cout << endl << n[i].label << "\t" << n[i].cost << "\t" << p[i];
+	}
+	return 0;
 }
 
 
-/* 
+/*
 this code was written by
 	Ahmed Mamdouh 20205029	NCS1
 	menna Shawkat ????????	??
