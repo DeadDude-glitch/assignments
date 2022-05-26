@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <fstream>
 #include "MinHeap.h"	// only to define struct of node
 using namespace std;
@@ -28,9 +29,9 @@ class WeightedGraph
 					g = new int* [size];									// an N size array of int pointer
 					for (int i=0; i<size; i++)
 					{
-						g[i] = new int[size];				// an N size array of int variables
+						g[i] = new int[size];								// an N size array of int variables
 						for (int j = 0; j < size; j++)
-							{g[i][j] = default_value;}		// filled with default value		
+							{g[i][j] = default_value;}						// filled with default value		
 						
 					}
 			}
@@ -81,7 +82,7 @@ class WeightedGraph
 			return false;
 	}
 
-	struct edge {int weight; char v1; char v2;};	// read file edge-based input
+	struct edge {int weight; char v1_label; char v2_label;};	// read file edge-based input
 
 // graded functions as requested from the assignment pdf file
 
@@ -92,7 +93,7 @@ class WeightedGraph
 	// returns weight of the edge connecting the given vertices
 	int WeightedGraph::getWeight(char row, char col)
 	{	
-		int i=0, j=0;
+		int i = row - 97, j= col - 97;
 		// TODO: find i and j from parameters
 		return std::max (g[i][j], g[j][i]);
 	}
@@ -120,7 +121,7 @@ class WeightedGraph
 		// traverse vertex's row
 		for (int i = 0; i < WeightedGraph::nVertices; i++) 
 		{
-			if (WeightedGraph::g[v][i] > 0 && v != i) { count++; }			// count values greater than 1
+			if (WeightedGraph::g[v][i] > 0 && v != i) { count++; }			// count values greater than 1 (dont count self)
 		}
 		return count;
 	}
@@ -129,24 +130,74 @@ class WeightedGraph
 	// allocates the adjacency matrix & initializes edge weights from the specified file
 	void WeightedGraph::loadGraphFromFile(fstream& file)
 	{
-		int nEdges;
+		int nEdges = 0;
 		file >> nVertices;
 		file >> nEdges;
-		edge* e = new edge[(nVertices * (nVertices - 1))];   // max number of edges (complete graph)
+		edge Edge;
+		// read edges and import them into adj matrix
 		while (nEdges > 0)
 		{
-			file >> e[nEdges].v1;
-			file >> e[nEdges].v2;
-			file >> e[nEdges].weight;
-			nEdges--;
+			try{
+				file >> Edge.v1_label;
+				file >> Edge.v2_label;
+				file >> Edge.weight;
+				nEdges -= 1;
+				try {
+					// transform edge list into adj matrix
+					// this step assumes that user names their vertcies according to the alphabitical order
+					// if not a segementation error is to occur
+					g[tolower(Edge.v1_label) - 97][tolower(Edge.v2_label) - 97] = Edge.weight;	// transform lower case characters into integers representation [0,25]
+				}
+				catch (const std::exception&) 
+				{ 
+					std::cout << "\n[INPUT FILE ERROR]\tdata types didn't match\n edge syntax: {vertix1_label} {vertix2_label} {weight_value}" << endl; 
+					return; 
+				}
+			} 
+			catch (const std::exception&)
+			{
+				std::cout << "\n[READING ERROR]\n most likely to be segementation";
+				std::cout << "\nY = " << tolower(Edge.v1_label) - 97 << "\nX = " << tolower(Edge.v2_label) - 97 << endl;
+			}
+			
 		}
-	}
 
+	}
+	
+	/*
+	* 
 	// find the shortest path from the start vertex to all other vertices, by filling the prev array and the distances array
 	void WeightedGraph::dijkstra (char startVertex, char* prev, Node distances[]) 
-	{ 
-		/* code here */
-		return;
+	{
+		bool* sptSet = new bool [nVertices]; // sptSet[i] will be true if vertex i is included in shortest
+		// path tree or shortest distance from src to i is finalized
+
+		// Initialize all distances as INFINITE and stpSet[] as false
+		for (int i = 0; i < nVertices; i++)
+			distances[i] = INT_MAX, sptSet[i] = false;
+
+		// Distance of source vertex from itself is always 0
+		distances[src] = 0;
+
+		// Find shortest path for all vertices
+		for (int count = 0; count < nVertices - 1; count++) {
+			// Pick the minimum distance vertex from the set of vertices not
+			// yet processed. u is always equal to src in the first iteration.
+			int u = minDistance (distances, sptSet);
+
+			// Mark the picked vertex as processed
+			sptSet[u] = true;
+
+			// Update dist value of the adjacent vertices of the picked vertex.
+			for (int v = 0; v < nVertices; v++)
+
+				// Update dist[v] only if is not in sptSet, there is an edge from
+				// u to v, and total weight of path from src to  v through u is
+				// smaller than current value of dist[v]
+				if (!sptSet[v] && g[u][v] && distances[u].cost != INT_MAX
+					&& distances[u].cost + g[u][v] < distances[v].cost)
+					distances[v].cost = distances[u].cost + g[u][v];
+		}
 	}
 
 

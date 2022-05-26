@@ -13,18 +13,18 @@ int main()
 	graph.loadGraphFromFile(ifile);
 	ifile.close();
 	// create array of vertcies labels
-	char* p;
-	p = new char[graph.getNVertices()];
+	char* label;
+	label = new char [graph.getNVertices()];
 	// create array of Nodes of graph 
 	Node* n;
-	n = new Node[graph.getNVertices()];
+	n = new Node [graph.getNVertices()];
 	// find the shortest path using dijkstra algorithm
-	graph.dijkstra('g', p, n);
+	graph.dijkstra ('g', label, n);
 	cout << endl << "Node\tCost\tPrevious"; // print path syntax
 	// print shortest path
 	for (int i = 0; i < graph.getNVertices(); i++)
 	{
-		cout << endl << n[i].label << "\t" << n[i].cost << "\t" << p[i];
+		cout << endl << n[i].label << "\t" << n[i].cost << "\t" << label[i];
 	}
 	return 0;
 }
@@ -33,5 +33,5 @@ int main()
 /*
 this code was written by
 	Ahmed Mamdouh 20205029	NCS1
-	menna Shawkat ????????	??
+	Menna Shawkat ????????	??
 */
