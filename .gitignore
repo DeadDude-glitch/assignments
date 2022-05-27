@@ -1,0 +1,6 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/shortestPath/.vs/shortestPath/FileContentIndex/2feafcac-30d2-4796-b28b-7e2381e7c267.vsidx
+/shortestPath/x64/Debug/vc143.pdb
