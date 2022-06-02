@@ -45,14 +45,14 @@ class WeightedGraph
 			int numNeighbors (int v);										// returns the number of neighbors of the vertex v
 			int* returnNeighbors (int v);									// returns the indices of the neighbors of the vertex v as an int array
 			void loadGraphFromFile (fstream& file);							// allocates the adjacency matrix & initializes edge weights from the specified file
-			void dijkstra (char startVertex, char* prev, Node distances[] );// find the shortest path from the start vertex to all other vertices, by filling the prev array and the distances array
+			void dijkstra (char src, char label[], Node dist[]);	// find the shortest path from the start vertex to all other vertices, by filling the prev array and the distances array
 	
 		// utility functions (non-graded nor requested)
-			void addEdge (char v1, char v2, int weight);					// add edge between v1 and v2
-			void addEdge (int  v1, int  v2, int weight);					// add edge between v1 and v2
-			void removeEdge (int  v1, int  v2);								// remove edge between v1 and v2
-			void removeEdge (char v1, char v2);								// remove edge between v1 and v2
 			bool isNeighbor (int v1, int v2);								// if g[v1][v2] > 0 then true  
+			int minDistance(Node dist[], bool sptSet[]);
+
+		// friend classes
+			friend class MinHeap;
 };
 
 
@@ -62,16 +62,24 @@ class WeightedGraph
 // non graded functions/structures for simplyification of code
 ///////////////////////////////////////////////////////////////
 	
-	// add edge between v1 and v2
-	void WeightedGraph::addEdge (int  v1, int  v2, int weight) { g[v1][v2] = weight; }
-	void WeightedGraph::addEdge (char v1, char v2, int weight) { g[v1 - 97][v2 - 97] = weight; }
 
-	// removes edge between v1 and v2
-	void WeightedGraph::removeEdge (int  v1, int  v2) { WeightedGraph::g[v1] [v2] = 0; }
-	void WeightedGraph::removeEdge (char v1, char v2) { WeightedGraph::g[v1-97][v2-97] = 0; }
 
 	// if exist v1 --> v2 or v2 --> v1 return true else false
 	bool WeightedGraph::isNeighbor(int v1, int v2) { return (WeightedGraph::g[v1][v2] > 0 || WeightedGraph::g[v2][v1] > 0); }
+
+	int WeightedGraph::minDistance(Node dist[], bool sptSet[])
+	{
+		// Initialize min value
+		int min = INT_MAX;
+		int min_index;
+		for (int i = 0; i < nVertices; i++)
+			if (sptSet[i] == false && dist[i].cost <= min)
+				min = dist[i].cost, min_index = i;
+		return min_index;
+	}
+
+
+
 
 
 
@@ -123,112 +131,146 @@ class WeightedGraph
 		// read edges and import them into adj matrix
 		while (nEdges > 0)
 		{
-			try{
-				file >> Edge.v1_label;
-				file >> Edge.v2_label;
-				file >> Edge.weight;
-				// checks if characters are alphabitc
-				if (Edge.v1_label - 97 < 0 || Edge.v2_label - 97 < 0) throw false;
-				nEdges -= 1;
-				try {
-					// transform edge list into adj matrix
-					// this step assumes that user names vertcies according to the alphabitical order
-					// if not a segementation error is to occur
-					g[tolower(Edge.v1_label) - 97][tolower(Edge.v2_label) - 97] = Edge.weight;	// transform lower case characters into integers representation [0,25]
-				}
-				catch (const std::exception&) 
-				{ 
-					std::cout << "\n[INPUT FILE ERROR]\tdata types didn't match\n EDGE SYNTAX: {vertix1_label} {vertix2_label} {weight_value}" << endl; 
-					return; 
-				}
-			} 
-			catch (const std::exception&)
-			{
-				std::cout << "\n[READING ERROR]\n most likely to be segementation";
-				std::cout << "\n[INPUT FILE ERROR]\tdata types didn't match\n EDGE  SYNTAX: {vertix1_label} {vertix2_label} {weight_value}" << endl;
-				std::cout << "\nY = " << tolower(Edge.v1_label) - 97 << "\nX = " << tolower(Edge.v2_label) - 97 << endl;
-			}
-			catch (bool) { std::cout << "\n[INPUT FILE ERROR]\tdata types didn't match"
-									 << "\n EDGE  SYNTAX : {char v1} {char v2} {integer weight}" << endl; }
-			
+
+			file >> Edge.v1_label;
+			file >> Edge.v2_label;
+			file >> Edge.weight;
+			// checks if characters are alphabitc
+			if ((Edge.v1_label - 97) < 0 || (Edge.v2_label - 97) < 0) throw false;
+			nEdges--;
 		}
 	}
+	
+	
+
+
+
+	void WeightedGraph::dijkstra(char src, char label[], Node dist[])
+	{
+		// src index
+		int srcIndex = tolower(src) - 97;
+		// sptSet[i] will true if vertex i is included
+		bool* sptSet = new bool [nVertices];
+
+		// Parent array to store shortest path tree
+		Node* parent = new Node [nVertices];
+
+		// Initialize all distances as INFINITE
+		for (int i = 0; i < nVertices; i++) dist[i].label = label[i];
+			
+
+		// Distance to vertex from itself is always 0
+		dist[src-97].cost = 0;
+
+		MinHeap heap (nVertices);
+		heap.buildMinHeap(dist, nVertices);
+		
+		
+		// Find shortest path for all vertices
+		for (int count = 0; count < nVertices - 1; count++) {
+			// Pick the minimum distance vertex 
+			int u = minDistance(dist, sptSet);
+			// Mark the picked vertex as processed
+			sptSet[u] = true;
+			// Update dist value of the adjacent vertices of the
+			// picked vertex.
+			for (int v = 0; v < nVertices; v++)
+				// Update dist[v] only if is not in sptSet,
+				// there is an edge from u to v, and total
+				// weight of path from src to v through u is
+				// smaller than current value of dist[v]
+				if (!sptSet[v] && g[u][v] && dist[u].cost + g[u][v] < dist[v].cost) 
+				{
+					parent[v].cost = u;
+					dist[v].cost = dist[u].cost + g[u][v];
+				}
+		}
+	}
+
+
+
+
+
 	
 	/*
 	// find the shortest path from the start vertex to all other vertices, by filling the prev array and the distances array
 	// calculates distances of shortest paths from src to all vertices. It is a O(ELogV) function
 	void WeightedGraph::dijkstra (char startVertex, char* prev, Node distances[]) 
 	{
-		// dist values used to pick minimum weight edge in cut
-		int* distance = new int [nVertices];
-
-		// minHeap represents set E
-		struct MinHeap* minHeap = createMinHeap(V);
-
-		// Initialize min heap with all 
-		// vertices. dist value of all vertices 
-		for (int v = 0; v < V; ++v)
+		// setting up variables for algorithm
+		startVertex = tolower(startVertex);
+		const int vertex = startVertex - 97;	// get start vertex index on the adj matrix
+		Node* path = new Node[nVertices];
+		char* prev = new char[nVertices];
+		// vist unvisited vertex with smallest cost
+		// for i in current vertix nigbours set cost = current cost + edge cost
+		for (int i = 0; i < nVertices; i++)
 		{
-			dist[v] = INT_MAX;
-			minHeap->array[v] = newMinHeapNode(v, dist[v]);
-			minHeap->pos[v] = v;
+			// create neighbors heap
+			int* neighborsIndex = returnNeighbors(i);
+			prev[i] = neighborsIndex[i]+97;
+			MinHeap* neighbors = new MinHeap (numNeighbors(i));
+			neighbors[i].decreaseKey( prev[i], g [vertex] [neighborsIndex[i]] + g[vertex][i]);
 		}
 
-		// Make dist value of src vertex 
-		// as 0 so that it is extracted first
-		minHeap->array[src] = newMinHeapNode(src, dist[src]);
-		minHeap->pos[src] = src;
-		dist[src] = 0;
-		decreaseKey(minHeap, src, dist[src]);
+		// calculate distance of each neighbour from vertex
+		// update shortest path
+		// mark current vertix visited
+	}
 
-		// Initially size of min heap is equal to V
-		minHeap->size = V;
-
-		// In the followin loop, 
-		// min heap contains all nodes
-		// whose shortest distance 
-		// is not yet finalized.
-		while (!isEmpty(minHeap))
+	
+	// find the shortest path from the start vertex to all other vertices
+	// calculates distances of shortest paths from src to all vertices.
+	void WeightedGraph::dijkstra (char startVertex, char* prev, Node distances[])
+	{
+		// dist values used to pick minimum weight edge in cut
+		int* distance = new int [nVertices];
+		// minHeap represents set E
+		MinHeap* minHeap = new MinHeap(nVertices);
+		// Initialize min heap with all
+		// vertices. dist value of all vertices
+		for (int v = 0; v < nVertices; ++v)
 		{
-			// Extract the vertex with 
-			// minimum distance value
-			struct MinHeapNode* minHeapNode = extractMin(minHeap);
-
+			Node* tmp = new Node(v+97, distances[v].cost);
+			distances[v].cost = INT_MAX;
+			minHeap[v] = tmp;
+		}
+		// Make dist value of src vertex
+		// as 0 so that it is extracted first
+		minHeap[startVertex] = new Node(startVertex, distances[startVertex].cost);
+		distances[startVertex].cost = 0;
+		minHeap->decreaseKey( startVertex, distances[startVertex].cost);
+		// In the followin loop,
+		// min heap contains all nodes
+		// whose shortest distance
+		// is not yet finalized.
+		Node minHeapNode;
+		while (!minHeap->isEmpty())
+		{
+			// Extract the vertex with the minimum distance 
 			// Store the extracted vertex number
-			int u = minHeapNode->v;
-
-			// Traverse through all adjacent 
-			// vertices of u (the extracted
-			// vertex) and update 
-			// their distance values
-			struct AdjListNode* pCrawl = graph->array[u].head;
+			minHeapNode = minHeap->extractMin();
+			int u = minHeapNode.cost;
+			// Traverse through all adjacent vertices of the extracted
+			// vertex and update their distance values
+			struct AdjListNode* pCrawl = g[u].head;
 			while (pCrawl != NULL)
 			{
 				int v = pCrawl->dest;
 				// If shortest distance to v is
 				// not finalized yet, and distance to v
-				// through u is less than its 
+				// through u is less than its
 				// previously calculated distance
-				if (isInMinHeap(minHeap, v) && dist[u] != INT_MAX && pCrawl->weight + dist[u] < dist[v])
+				if (minHeap->inHeap(v) && distance[u] != INT_MAX && pCrawl->weight + distance[u].cost < distance[v].cost)
 				{
-					dist[v] = dist[u] + pCrawl->weight;
-					// update distance 
-					// value in min heap also
-					decreaseKey(minHeap, v, dist[v]);
+					distances[v] = distances[u] + pCrawl->weight;
+					// update distance value in min heap also
+					minHeap->decreaseKey( v, distances[v].cost);
 				}
 				pCrawl = pCrawl->next;
 			}
 		}
-		// print the calculated shortest distances
-		printArr(dist, V);
 	}
-
-
-
-
-
-
-
 
 
 
